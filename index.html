@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CHECKMATE IN THE DARK — Chess Horror & P2P Co-op</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -86,10 +86,11 @@
   <div id="jumpscareSub" class="text-xs sm:text-sm font-bold tracking-widest text-zinc-200 bg-red-950/90 border border-red-500/60 px-4 py-1.5 rounded-full mt-2 shadow-lg">FROM THE DARKNESS</div>
 </div>
 
+<!-- HUD LEFT -->
 <div class="fixed top-4 left-4 glass-panel p-4 rounded-xl z-10 w-68 sm:w-76 pointer-events-none">
   <div class="flex items-center justify-between border-b border-zinc-800 pb-2 mb-3">
     <span id="lbl-hud-title" class="title-font text-xs tracking-widest text-zinc-400">CO-OP SURVIVAL</span>
-    <span id="ui-room-type" class="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">CHAMBER</span>
+    <span id="ui-p2p-badge" class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-bold">HOTSEAT</span>
   </div>
   
   <div class="space-y-2 text-sm">
@@ -101,9 +102,13 @@
       <span id="lbl-turn-status" class="text-xs font-bold text-sky-300">ACTIVE TURN:</span>
       <span id="ui-turn-status" class="text-xs font-extrabold text-emerald-400">🟢 GREEN KING</span>
     </div>
+    <div id="ui-my-role-row" class="hidden justify-between items-center">
+      <span class="text-xs font-bold text-zinc-400">YOUR ROLE:</span>
+      <span id="ui-my-role" class="text-xs font-extrabold text-emerald-300">🟢 GREEN KING</span>
+    </div>
     <div class="flex justify-between items-center">
       <span id="lbl-keys" class="text-zinc-400 text-xs">KEYS FOUND:</span>
-      <span id="ui-keys" class="text-amber-400 font-bold">0 / 10 🔑</span>
+      <span id="ui-keys" class="text-amber-400 font-bold">0 / 3 🔑</span>
     </div>
     <div class="flex justify-between items-center">
       <span id="lbl-ammo" class="text-zinc-400 text-xs">AMMO / GUN:</span>
@@ -113,10 +118,6 @@
       <span id="lbl-bandages" class="text-zinc-400 text-xs">BANDAGES:</span>
       <span id="ui-bandages" class="text-emerald-400 font-bold">0 🩹</span>
     </div>
-    <div id="ui-challenge-box" class="hidden pt-1.5 border-t border-purple-500/40 flex justify-between items-center">
-      <span id="lbl-challenge" class="text-purple-300 text-xs font-bold">🔮 CHALLENGE:</span>
-      <span id="ui-challenge-count" class="text-xs font-extrabold text-fuchsia-400 animate-pulse">5 LEFT</span>
-    </div>
     <div class="flex justify-between items-center pt-1 border-t border-zinc-800/80">
       <span id="lbl-exit" class="text-zinc-500 text-xs">EXIT DOOR:</span>
       <span id="ui-door" class="text-xs font-bold text-red-400">LOCKED</span>
@@ -124,48 +125,28 @@
   </div>
 </div>
 
-<div id="npc-dialogue-box" class="hidden fixed top-4 left-1/2 -translate-x-1/2 glass-panel px-5 py-3.5 rounded-2xl border-2 border-amber-400/70 z-20 w-[92%] max-w-lg pointer-events-none shadow-[0_0_30px_rgba(251,191,36,0.28)] transition-all duration-300">
-  <div class="flex items-start gap-3.5">
-    <div class="w-11 h-11 rounded-xl bg-amber-950/90 border border-amber-400 flex items-center justify-center text-3xl text-white shrink-0 shadow-inner">♙</div>
-    <div class="text-left">
-      <div class="flex items-center gap-2">
-        <span id="npc-speaker-name" class="title-font text-xs font-extrabold tracking-wider text-amber-300 uppercase">BARNABY THE PAWN SQUIRE</span>
-        <span id="npc-role-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold">ROYAL GUIDE</span>
-      </div>
-      <p id="npc-dialogue-text" class="text-xs sm:text-sm text-zinc-100 leading-relaxed mt-1 font-normal">
-        "Thank God you're awake, Sire!"
-      </p>
-    </div>
-  </div>
-</div>
-
+<!-- HUD RIGHT: STALKERS -->
 <div class="fixed top-4 right-4 glass-panel p-4 rounded-xl z-10 w-64 sm:w-72 pointer-events-none">
   <div class="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2.5">
     <span id="lbl-stalkers" class="title-font text-xs tracking-widest text-red-400">BLACK STALKERS</span>
-    <span id="lbl-cooldown" class="text-[10px] text-zinc-500">COOLDOWN</span>
+    <span id="lbl-cooldown" class="text-[10px] text-zinc-500">NEXT MOVE</span>
   </div>
   <div id="enemy-list" class="space-y-1.5 text-xs"></div>
 </div>
 
-<div id="flashlight-joy-zone" class="fixed bottom-24 right-5 w-28 h-28 rounded-full glass-panel border-2 border-amber-400/40 z-20 flex items-center justify-center touch-none select-none shadow-[0_0_25px_rgba(251,191,36,0.2)]">
-  <div id="lbl-aim-light" class="text-[9px] text-amber-300/60 font-bold tracking-widest uppercase pointer-events-none text-center leading-tight">
-    🔦 AIM<br>LIGHT
-  </div>
-  <div id="flashlight-joy-knob" class="w-11 h-11 rounded-full bg-amber-400/90 border-2 border-white shadow-[0_0_16px_rgba(251,191,36,0.95)] absolute pointer-events-none transition-transform duration-75"></div>
-</div>
-
+<!-- BOTTOM ACTION BAR -->
 <div class="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10 w-[94%] max-w-xl pointer-events-none">
   <div id="log" class="glass-panel px-4 py-2 rounded-lg text-xs sm:text-sm text-center text-zinc-200 tracking-wide w-full">
     Green King (WASD) & Purple King (Arrow Keys) Co-op Mode active!
   </div>
   <div class="flex flex-wrap justify-center gap-1.5 sm:gap-2 pointer-events-auto">
     <button id="btn-lever" class="hidden glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-300 border border-amber-600/60 hover:bg-amber-950/60 transition animate-pulse">
-      🕹️ Pull Wood Gate Lever (E)
+      🕹️ Pull Lever (E)
     </button>
-    <button id="btn-shoot" class="hidden glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-200 border border-amber-500/60 hover:bg-amber-950/60 transition">
+    <button id="btn-shoot" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-200 border border-amber-500/60 hover:bg-amber-950/60 transition">
       🔫 Shoot Closest (G)
     </button>
-    <button id="btn-heal" class="hidden glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-emerald-300 border border-emerald-500/60 hover:bg-emerald-950/60 transition">
+    <button id="btn-heal" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-emerald-300 border border-emerald-500/60 hover:bg-emerald-950/60 transition">
       🩹 Use Bandage (R)
     </button>
     <button id="btn-wait" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs text-zinc-300 hover:text-white hover:border-amber-400/50 transition">
@@ -174,11 +155,8 @@
     <button id="btn-compass" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs text-amber-300 hover:text-amber-200 hover:border-amber-400/50 transition">
       🧭 Key Pulse (H)
     </button>
-    <button id="btn-settings" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs text-zinc-200 hover:text-white hover:border-zinc-400/50 transition">
-      ⚙️ Settings
-    </button>
-    <button id="btn-edit-back" class="hidden glass-panel px-3.5 py-1.5 rounded-lg text-xs font-bold text-emerald-300 border border-emerald-500/60 hover:bg-emerald-950/60 transition">
-      🛠️ Back to Editor
+    <button id="btn-settings" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs text-sky-300 border border-sky-500/40 hover:text-white hover:border-sky-400 transition">
+      🌐 P2P / Settings
     </button>
     <button id="btn-new" class="glass-panel px-3.5 py-1.5 rounded-lg text-xs text-red-300 hover:text-red-200 hover:border-red-400/50 transition">
       ↻ Restart / Menu
@@ -186,72 +164,66 @@
   </div>
 </div>
 
-<div id="builder-ui" class="hidden fixed inset-x-0 bottom-3 z-20 flex flex-col items-center pointer-events-none px-3">
-  <div class="glass-panel p-3 rounded-2xl border border-emerald-500/40 max-w-4xl w-full pointer-events-auto shadow-2xl">
-    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-2 mb-2">
-      <div class="flex items-center gap-2">
-        <span class="title-font text-xs sm:text-sm font-bold tracking-wider text-emerald-400">🛠️ CUSTOM SCENARIO BUILDER</span>
-        <span id="builder-status" class="text-[11px] text-zinc-400 hidden sm:inline">Click/drag to paint tiles. Drag with Right-Click or WASD to pan camera.</span>
-      </div>
-      <div class="flex flex-wrap items-center gap-1.5">
-        <button id="b-btn-room" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-zinc-200 border border-zinc-700">Carve Arena</button>
-        <button id="b-btn-clear" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-red-950 text-[11px] text-red-300 border border-zinc-700">Clear All</button>
-        <button id="b-btn-export" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-sky-300 border border-zinc-700">Copy JSON</button>
-        <button id="b-btn-import" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-[11px] text-amber-300 border border-zinc-700">Paste JSON</button>
-        <button id="b-btn-play" class="px-3.5 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-xs font-bold text-white border border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]">▶ PLAY SCENARIO</button>
-        <button id="b-btn-menu" class="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-[11px] text-zinc-400 border border-zinc-800">Menu</button>
-      </div>
-    </div>
-    <div id="builder-palette" class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs"></div>
-  </div>
-</div>
-
-<div id="json-modal" class="hidden fixed inset-0 bg-black/85 z-40 flex items-center justify-center p-4">
-  <div class="glass-panel p-5 rounded-2xl max-w-lg w-full border border-amber-500/40 space-y-3">
-    <div class="title-font text-sm font-bold text-amber-300 tracking-wider" id="json-modal-title">SCENARIO DATA (JSON)</div>
-    <textarea id="json-textarea" rows="6" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs text-zinc-200 font-mono focus:outline-none focus:border-amber-400" placeholder="Paste scenario JSON here..."></textarea>
-    <div class="flex justify-end gap-2">
-      <button id="json-cancel" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-xs text-zinc-300 hover:bg-zinc-700">Close</button>
-      <button id="json-apply" class="px-4 py-1.5 rounded-lg bg-amber-600 text-xs font-bold text-white hover:bg-amber-500">Load Scenario</button>
-    </div>
-  </div>
-</div>
-
 <!-- SETTINGS & P2P MODAL -->
 <div id="settings-modal" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4">
   <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-zinc-600/50 space-y-5 shadow-2xl">
     <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-      <span id="lbl-settings-title" class="title-font text-base font-extrabold text-white tracking-wider">⚙️ SETTINGS & ONLINE P2P</span>
+      <span id="lbl-settings-title" class="title-font text-base font-extrabold text-white tracking-wider">🌐 ONLINE P2P & SETTINGS</span>
       <button id="settings-close-top" class="text-zinc-400 hover:text-white text-sm font-bold px-2 py-0.5 rounded bg-zinc-800/80">✕</button>
     </div>
 
     <div class="space-y-4 text-left">
-      <div>
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold text-sky-400 uppercase tracking-wider">🌐 Online P2P Co-op (GitHub Pages Ready)</div>
+          <span id="p2p-conn-indicator" class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-semibold">Offline (Local Hotseat)</span>
+        </div>
+        <div class="text-[11px] text-zinc-400 leading-relaxed">
+          Host a room to play <b class="text-emerald-300">Green King 🟢</b>, or join a friend's 6-character code (or invite link) to play <b class="text-fuchsia-300">Purple King 🟣</b>!
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="p2p-host-btn" class="py-2.5 px-3 rounded-xl bg-sky-800 hover:bg-sky-700 text-xs font-bold text-white border border-sky-500 transition shadow-lg">
+            👑 Host Room
+          </button>
+          <button id="p2p-disconnect-btn" class="hidden py-2.5 px-3 rounded-xl bg-red-900/70 hover:bg-red-800 text-xs font-bold text-red-200 border border-red-500/50 transition">
+            ✕ Disconnect
+          </button>
+        </div>
+
+        <!-- Join input row -->
+        <div class="flex gap-2">
+          <input id="p2p-code-input" type="text" maxlength="12" placeholder="Enter Room Code (e.g. K7X9M2)" class="flex-1 bg-zinc-950 border border-zinc-700 focus:border-sky-400 rounded-xl px-3 py-2 text-xs text-white uppercase tracking-widest outline-none font-bold" />
+          <button id="p2p-join-btn" class="px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-xs font-bold text-white border border-emerald-500 transition">
+            Join Room
+          </button>
+        </div>
+
+        <!-- Room code & copy invite box -->
+        <div id="p2p-room-panel" class="hidden bg-zinc-950/90 p-3 rounded-xl border border-sky-500/40 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-zinc-400">ROOM CODE:</span>
+            <span id="p2p-room-code-display" class="text-base font-extrabold tracking-widest text-amber-300 select-all">------</span>
+          </div>
+          <div class="flex gap-2">
+            <button id="p2p-copy-code-btn" class="flex-1 py-1.5 px-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[11px] font-semibold text-zinc-200 border border-zinc-600 transition">
+              📋 Copy Code
+            </button>
+            <button id="p2p-copy-link-btn" class="flex-1 py-1.5 px-2.5 rounded-lg bg-sky-900/60 hover:bg-sky-800/80 text-[11px] font-semibold text-sky-200 border border-sky-500/50 transition">
+              🔗 Copy Invite Link
+            </button>
+          </div>
+        </div>
+
+        <div id="p2p-status-box" class="hidden text-xs bg-zinc-950 p-2.5 rounded-lg border border-zinc-700 text-sky-200 leading-relaxed"></div>
+      </div>
+
+      <div class="pt-3 border-t border-zinc-800/80">
         <div id="lbl-setting-lang" class="text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">🌐 Language / Язык</div>
         <div class="grid grid-cols-2 gap-2">
-          <button id="lang-btn-en" class="py-2.5 px-3 rounded-xl border-2 border-amber-400 bg-amber-950/40 text-xs font-bold text-white transition">🇬🇧 English</button>
-          <button id="lang-btn-ru" class="py-2.5 px-3 rounded-xl border border-zinc-700 bg-zinc-900/80 text-xs font-bold text-zinc-300 transition hover:border-amber-400/60">🇷🇺 Русский</button>
+          <button id="lang-btn-en" class="py-2 px-3 rounded-xl border-2 border-amber-400 bg-amber-950/40 text-xs font-bold text-white transition">🇬🇧 English</button>
+          <button id="lang-btn-ru" class="py-2 px-3 rounded-xl border border-zinc-700 bg-zinc-900/80 text-xs font-bold text-zinc-300 transition hover:border-amber-400/60">🇷🇺 Русский</button>
         </div>
-      </div>
-
-      <div class="pt-2 border-t border-zinc-800/80">
-        <div class="flex items-center justify-between">
-          <div>
-            <div id="lbl-setting-js" class="text-xs font-bold text-red-400 uppercase tracking-wider">👻 Jumpscares</div>
-            <div id="lbl-setting-js-desc" class="text-[11px] text-zinc-400 mt-0.5 pr-2">When OFF, attacks show board direction without fullscreen popups.</div>
-          </div>
-          <button id="toggle-jumpscare-btn" class="px-4 py-2 rounded-xl font-bold text-xs border-2 border-emerald-400 bg-emerald-950/50 text-emerald-300 shrink-0 transition">ON</button>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-zinc-800/80 space-y-2">
-        <div class="text-xs font-bold text-sky-400 uppercase tracking-wider">🌐 Online P2P Multiplayer</div>
-        <div class="text-[11px] text-zinc-400">Host a room to play Green King, or join a friend's room code to play Purple King online!</div>
-        <div class="flex gap-2 pt-1">
-          <button id="p2p-host-btn" class="flex-1 py-2 rounded-xl bg-sky-800 hover:bg-sky-700 text-xs font-bold text-white border border-sky-500 transition">Host Room</button>
-          <button id="p2p-join-btn" class="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-sky-300 border border-zinc-600 transition">Join Room</button>
-        </div>
-        <div id="p2p-status-box" class="hidden text-xs bg-zinc-950 p-2.5 rounded-lg border border-sky-500/40 text-sky-200"></div>
       </div>
     </div>
 
@@ -261,66 +233,56 @@
   </div>
 </div>
 
+<!-- MAIN OVERLAY MENU -->
 <div id="overlay" class="fixed inset-0 bg-black/95 flex flex-col justify-center items-center z-30 p-4 sm:p-6 text-center overflow-y-auto">
   <div class="max-w-xl w-full glass-panel p-6 sm:p-8 rounded-2xl border border-red-900/40 my-auto relative">
-    <button id="ov-settings-btn" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-xs font-semibold text-zinc-200 border border-zinc-700 transition">⚙️ Settings / P2P</button>
-    <h1 id="ov-title" class="title-font text-2xl sm:text-5xl font-extrabold tracking-wider text-white mb-2 mt-4 sm:mt-0 drop-shadow-[0_0_24px_rgba(220,38,38,0.75)]">CHECKMATE IN THE DARK</h1>
+    <button id="ov-settings-btn" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-xs font-semibold text-sky-200 border border-sky-500/50 transition shadow">🌐 Host / Join P2P</button>
+    <h1 id="ov-title" class="title-font text-2xl sm:text-5xl font-extrabold tracking-wider text-white mb-2 mt-6 sm:mt-0 drop-shadow-[0_0_24px_rgba(220,38,38,0.75)]">CHECKMATE IN THE DARK</h1>
     <p id="ov-desc" class="text-zinc-400 text-xs sm:text-sm leading-relaxed mb-4">
       Play Solo or in <span class="text-emerald-400 font-semibold">2-Player Co-op</span> (<span class="text-emerald-300">Green King 🟢</span> & <span class="text-fuchsia-300">Purple King 🟣</span>) with local hotseat or online P2P!
     </p>
+
+    <div id="ov-p2p-banner" class="hidden mb-4 p-3 rounded-xl bg-sky-950/50 border border-sky-500/50 text-xs text-sky-200 flex items-center justify-between">
+      <span id="ov-p2p-banner-text">Connected to P2P Room!</span>
+      <button id="ov-p2p-manage-btn" class="px-2.5 py-1 rounded bg-sky-800 hover:bg-sky-700 text-[11px] font-bold text-white">Room Info</button>
+    </div>
 
     <div class="mb-3 text-left">
       <div id="lbl-select-mode" class="text-[11px] font-bold tracking-widest text-sky-400 uppercase mb-1.5 text-center">SELECT SCENARIO</div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="mode-buttons">
         <button data-mode="TUTORIAL" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-amber-300">
           <div class="font-bold text-xs text-amber-300">♙ TUTORIAL</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Squire Barnaby's Tour</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Learn the Basics</div>
         </button>
         <button data-mode="NORMAL_GAME" class="mode-btn p-2 rounded-xl border-2 border-sky-400 bg-sky-950/30 text-left transition">
           <div class="font-bold text-xs text-sky-300">FULL LABYRINTH</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">20 Rooms + Bosses</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Procedural Dungeon</div>
         </button>
         <button data-mode="SCENARIO_ROOK" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-orange-400">
           <div class="font-bold text-xs text-orange-400">STATUE & BOSS</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">White Rook & Black King</div>
-        </button>
-        <button data-mode="SCENARIO_MAYHEM" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-red-400">
-          <div class="font-bold text-xs text-red-400">🔥 ROOK MAYHEM</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Border Statues + Waves</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Rooks & Black King</div>
         </button>
         <button data-mode="SCENARIO_LAVA" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-amber-500">
           <div class="font-bold text-xs text-amber-400">🌋 LAVA MAZE</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Treacherous Pits</div>
-        </button>
-        <button data-mode="SCENARIO_GAUNTLET" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-sky-400">
-          <div class="font-bold text-xs text-sky-300">⚔️ GAUNTLET</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Tactical Gates</div>
-        </button>
-        <button data-mode="SCENARIO_PAWNS" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-purple-400">
-          <div class="font-bold text-xs text-purple-400">PAWN PROMOTION</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Shrine Lockdowns</div>
-        </button>
-        <button data-mode="CUSTOM_BUILDER" class="mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-emerald-400">
-          <div class="font-bold text-xs text-emerald-400">🛠️ BUILDER</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">Design & Playtest</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">Crumbling Floor</div>
         </button>
       </div>
     </div>
 
-    <div class="mb-4 text-left">
+    <div class="mb-5 text-left">
       <div id="lbl-select-diff" class="text-[11px] font-bold tracking-widest text-amber-400 uppercase mb-1.5 text-center">SELECT DIFFICULTY</div>
       <div class="grid grid-cols-3 gap-2" id="diff-buttons">
         <button data-diff="EASY" class="diff-btn p-2.5 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-emerald-400">
           <div class="font-bold text-xs text-emerald-400">APPRENTICE</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">6 Stalkers + ♚</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">3 Keys • 4 Stalkers</div>
         </button>
         <button data-diff="NORMAL" class="diff-btn p-2.5 rounded-xl border-2 border-amber-400 bg-amber-950/30 text-left transition">
           <div class="font-bold text-xs text-amber-300">GRANDMASTER</div>
-          <div class="text-[10px] text-zinc-400 mt-0.5">10 Stalkers + ♚</div>
+          <div class="text-[10px] text-zinc-400 mt-0.5">5 Keys • 7 Stalkers</div>
         </button>
         <button data-diff="HARD" class="diff-btn p-2.5 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-red-500">
           <div class="font-bold text-xs text-red-400">NIGHTMARE</div>
-          <div class="text-[10px] text-zinc-300 mt-0.5">15 Stalkers + ♚</div>
+          <div class="text-[10px] text-zinc-300 mt-0.5">8 Keys • 11 Stalkers</div>
         </button>
       </div>
     </div>
@@ -353,74 +315,84 @@
   function initAudio() {
     if (!audioCtx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AudioContext();
+      if (AudioContext) audioCtx = new AudioContext();
     }
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   }
 
   function playSound(type) {
     if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
 
-    if (type === 'step') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(110, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
-      osc.start(now); osc.stop(now + 0.08);
-    } else if (type === 'key') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, now);
-      osc.frequency.setValueAtTime(880, now + 0.09);
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      osc.start(now); osc.stop(now + 0.35);
-    } else if (type === 'shoot') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(280, now);
-      osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-      gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
-      osc.start(now); osc.stop(now + 0.32);
-    } else if (type === 'heal') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.setValueAtTime(660, now + 0.15);
-      osc.frequency.setValueAtTime(880, now + 0.3);
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-      osc.start(now); osc.stop(now + 0.5);
-    } else if (type === 'win') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.setValueAtTime(554.37, now + 0.12);
-      osc.frequency.setValueAtTime(659.25, now + 0.24);
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      osc.start(now); osc.stop(now + 0.6);
-    }
+      if (type === 'step') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now); osc.stop(now + 0.08);
+      } else if (type === 'key') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.09);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now); osc.stop(now + 0.35);
+      } else if (type === 'shoot') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+        osc.start(now); osc.stop(now + 0.32);
+      } else if (type === 'heal') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(660, now + 0.15);
+        osc.frequency.setValueAtTime(880, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+      } else if (type === 'win') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554.37, now + 0.12);
+        osc.frequency.setValueAtTime(659.25, now + 0.24);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.start(now); osc.stop(now + 0.6);
+      }
+    } catch (e) {}
+  }
+
+  function triggerDamageFlash() {
+    const el = document.getElementById('damageFlash');
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 350);
+  }
+
+  function triggerShootFlash() {
+    const el = document.getElementById('shootFlash');
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 120);
   }
 
   const TILE = 46;
-  const MAP_W = 92;
-  const MAP_H = 92;
-  let totalKeysNeeded = 10;
+  const MAP_W = 64;
+  const MAP_H = 64;
+  let totalKeysNeeded = 5;
 
   let grid = [];
   let explored = [];
   let rooms = [];
-  let hallways = [];
   let keys = [];
   let guns = [];
   let bandages = [];
-  let rewardChests = [];
-  let whiteRooks = [];
-  let activeRookDashEffects = [];
   let door = { x: 0, y: 0, unlocked: false };
   let gateDoors = [];
   let levers = [];
@@ -429,42 +401,48 @@
   let pulseWaves = [];
 
   const settings = { lang: 'en', jumpscare: true };
-  const p2pState = { active: false, isHost: false, peer: null, conn: null, myRole: 'GREEN', roomId: '' };
+
+  // P2P State with PeerJS prefix for short 6-character room codes
+  const PEER_PREFIX = 'citd-p2p-v1-';
+  const p2pState = {
+    active: false,
+    isHost: false,
+    peer: null,
+    conn: null,
+    myRole: 'GREEN',
+    roomCode: '',
+    heartbeatTimer: null
+  };
 
   let currentDifficulty = 'NORMAL';
   let currentMode = 'NORMAL_GAME';
 
-  const greenKing = { x: 0, y: 0, drawX: 0, drawY: 0, aimAngle: 0, targetAimAngle: 0, symbol: '♔', color: '#34d399', name: 'Green King' };
-  const purpleKing = { x: 0, y: 0, drawX: 0, drawY: 0, aimAngle: 0, targetAimAngle: 0, symbol: '♔', color: '#e879f9', name: 'Purple King' };
+  const greenKing = { x: 30, y: 30, drawX: 30, drawY: 30, aimAngle: 0, symbol: '♔', color: '#34d399', name: 'Green King' };
+  const purpleKing = { x: 32, y: 30, drawX: 32, drawY: 30, aimAngle: 0, symbol: '♔', color: '#e879f9', name: 'Purple King' };
   let activeKingTurn = 'GREEN';
 
   const sharedInventory = {
     lives: 3,
     maxLives: 3,
     keys: 0,
-    ammo: 0,
-    bandages: 0,
+    ammo: 2,
+    bandages: 1,
     turns: 0
   };
 
-  let promotionCenters = [];
-
-  const camera = { x: 0, y: 0 };
-  const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2, worldX: 0, worldY: 0, active: false };
-  const joyState = { active: false, touchId: null };
+  const camera = { x: 30 * TILE, y: 30 * TILE };
+  const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   let gameState = 'MENU';
-  let screenShake = 0;
 
   const ENEMY_TYPES = {
-    PAWN: { type: 'PAWN', name: 'Black Pawn', symbol: '♟', cooldown: 2, initialDelay: 2, maxSlide: 1, color: '#a855f7' },
-    BISHOP: { type: 'BISHOP', name: 'Black Bishop', symbol: '♝', cooldown: 1, initialDelay: 1, maxSlide: 6, color: '#38bdf8' },
-    KNIGHT: { type: 'KNIGHT', name: 'Black Knight', symbol: '♞', cooldown: 2, initialDelay: 2, maxSlide: 1, color: '#fb923c' },
-    ROOK: { type: 'ROOK', name: 'Black Rook', symbol: '♜', cooldown: 3, initialDelay: 3, maxSlide: 7, color: '#f87171' },
-    QUEEN: { type: 'QUEEN', name: 'Black Queen', symbol: '♛', cooldown: 3, initialDelay: 4, maxSlide: 8, color: '#f43f5e' },
-    BLACK_KING: { type: 'BLACK_KING', name: 'The Black King', symbol: '♚', cooldown: 2, initialDelay: 2, maxSlide: 1, color: '#facc15', unstoppable: true }
+    PAWN: { type: 'PAWN', name: 'Black Pawn', symbol: '♟', cooldown: 2, maxSlide: 1, color: '#a855f7' },
+    BISHOP: { type: 'BISHOP', name: 'Black Bishop', symbol: '♝', cooldown: 2, maxSlide: 5, color: '#38bdf8' },
+    KNIGHT: { type: 'KNIGHT', name: 'Black Knight', symbol: '♞', cooldown: 2, maxSlide: 1, color: '#fb923c' },
+    ROOK: { type: 'ROOK', name: 'Black Rook', symbol: '♜', cooldown: 3, maxSlide: 6, color: '#f87171' },
+    QUEEN: { type: 'QUEEN', name: 'Black Queen', symbol: '♛', cooldown: 3, maxSlide: 6, color: '#f43f5e' },
+    BLACK_KING: { type: 'BLACK_KING', name: 'The Black King', symbol: '♚', cooldown: 2, maxSlide: 1, color: '#facc15', unstoppable: true }
   };
   let enemies = [];
-  let distField = [];
 
   function spawnBurst(gx, gy, color, count = 20) {
     const wx = (gx + 0.5) * TILE;
@@ -480,14 +458,16 @@
     return activeKingTurn === 'GREEN' ? greenKing : purpleKing;
   }
 
+  function getMyKing() {
+    if (!p2pState.active) return getActiveKing();
+    return p2pState.myRole === 'GREEN' ? greenKing : purpleKing;
+  }
+
   function isHardWallOrBarrierAt(x, y) {
     if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H) return true;
-    if (grid[y][x] === 0) return true;
+    if (!grid[y] || grid[y][x] === 0) return true;
     for (const g of gateDoors) {
       if (!g.isOpen && g.tiles.some(t => t.x === x && t.y === y)) return true;
-    }
-    for (const pc of promotionCenters) {
-      if (pc.active && pc.triggered && pc.lockBarriers?.some(b => b.x === x && b.y === y)) return true;
     }
     return false;
   }
@@ -503,56 +483,153 @@
     return true;
   }
 
-  function computeDistanceFieldToTarget(tx, ty) {
-    const field = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(Infinity));
-    if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H) return field;
-    const queue = [{ x: tx, y: ty }];
-    field[ty][tx] = 0;
-    let head = 0;
-    const dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    while (head < queue.length) {
-      const cur = queue[head++];
-      const curDist = field[cur.y][cur.x];
-      for (const [dx, dy] of dirs) {
-        const nx = cur.x + dx;
-        const ny = cur.y + dy;
-        if (!isWalkable(nx, ny)) continue;
-        if (dx !== 0 && dy !== 0 && !isWalkable(cur.x, ny) && !isWalkable(nx, cur.y)) continue;
-        if (field[ny][nx] > curDist + 1) {
-          field[ny][nx] = curDist + 1;
-          queue.push({ x: nx, y: ny });
+  function revealAround(gx, gy, radius = 6) {
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const nx = gx + dx, ny = gy + dy;
+        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H) {
+          if (dx * dx + dy * dy <= radius * radius) {
+            explored[ny][nx] = true;
+          }
         }
       }
     }
-    return field;
-  }
-
-  function computePlayerDistanceField() {
-    distField = computeDistanceFieldToTarget(greenKing.x, greenKing.y);
   }
 
   function canKingStepTo(king, tx, ty) {
-    if (!isWalkable(tx, ty) && !crumblingTiles.has(`${tx},${ty}`)) return false;
+    if (isHardWallOrBarrierAt(tx, ty)) return false;
     const dx = Math.abs(tx - king.x);
     const dy = Math.abs(ty - king.y);
     if (dx === 0 && dy === 0) return false;
     if (dx > 1 || dy > 1) return false;
     if (dx === 1 && dy === 1) {
-      if (!isWalkable(king.x, ty) && !isWalkable(tx, king.y)) return false;
+      if (isHardWallOrBarrierAt(king.x, ty) && isHardWallOrBarrierAt(tx, king.y)) return false;
     }
     return true;
   }
 
+  // Serializes the entire game state for P2P synchronization
+  function serializeFullState(logMsg = null) {
+    // Pack explored bitmask rows to keep payload compact & fast
+    const exploredRows = explored.map(row => row.map(v => v ? 1 : 0).join(''));
+    const gridRows = grid.map(row => row.join(''));
+    return {
+      type: 'FULL_SYNC',
+      gameState,
+      currentMode,
+      currentDifficulty,
+      totalKeysNeeded,
+      gridRows,
+      exploredRows,
+      greenKing: { x: greenKing.x, y: greenKing.y, aimAngle: greenKing.aimAngle },
+      purpleKing: { x: purpleKing.x, y: purpleKing.y, aimAngle: purpleKing.aimAngle },
+      activeKingTurn,
+      sharedInventory: { ...sharedInventory },
+      door: { ...door },
+      keys: keys.map(k => ({ ...k })),
+      guns: guns.map(g => ({ ...g })),
+      bandages: bandages.map(b => ({ ...b })),
+      enemies: enemies.map(e => ({ ...e })),
+      gateDoors: gateDoors.map(gd => ({ id: gd.id, isOpen: gd.isOpen, tiles: gd.tiles })),
+      levers: levers.map(lv => ({ ...lv })),
+      crumbling: Array.from(crumblingTiles.entries()),
+      logMsg
+    };
+  }
+
+  function applyFullState(data) {
+    if (!data) return;
+    const prevLives = sharedInventory.lives;
+    gameState = data.gameState || 'PLAYING';
+    currentMode = data.currentMode || currentMode;
+    currentDifficulty = data.currentDifficulty || currentDifficulty;
+    totalKeysNeeded = data.totalKeysNeeded || 5;
+
+    if (data.gridRows && data.gridRows.length === MAP_H) {
+      grid = data.gridRows.map(r => r.split('').map(Number));
+    }
+    if (data.exploredRows && data.exploredRows.length === MAP_H) {
+      explored = data.exploredRows.map(r => r.split('').map(ch => ch === '1'));
+    }
+
+    if (data.greenKing) {
+      greenKing.x = data.greenKing.x;
+      greenKing.y = data.greenKing.y;
+      if (typeof data.greenKing.aimAngle === 'number') greenKing.aimAngle = data.greenKing.aimAngle;
+    }
+    if (data.purpleKing) {
+      purpleKing.x = data.purpleKing.x;
+      purpleKing.y = data.purpleKing.y;
+      if (typeof data.purpleKing.aimAngle === 'number') purpleKing.aimAngle = data.purpleKing.aimAngle;
+    }
+
+    activeKingTurn = data.activeKingTurn || 'GREEN';
+    if (data.sharedInventory) Object.assign(sharedInventory, data.sharedInventory);
+    if (data.door) door = { ...data.door };
+    if (Array.isArray(data.keys)) keys = data.keys;
+    if (Array.isArray(data.guns)) guns = data.guns;
+    if (Array.isArray(data.bandages)) bandages = data.bandages;
+    if (Array.isArray(data.enemies)) enemies = data.enemies;
+    if (Array.isArray(data.gateDoors)) gateDoors = data.gateDoors;
+    if (Array.isArray(data.levers)) levers = data.levers;
+    if (Array.isArray(data.crumbling)) {
+      crumblingTiles = new Map(data.crumbling);
+    }
+
+    if (sharedInventory.lives < prevLives) {
+      triggerDamageFlash();
+      playSound('shoot');
+    } else {
+      playSound('step');
+    }
+
+    if (gameState === 'PLAYING') {
+      document.getElementById('overlay').classList.add('hidden');
+    } else if (gameState === 'OVER') {
+      showOverlay('CHECKMATE', 'The Black forces claimed the labyrinth.', 'TRY AGAIN');
+    } else if (gameState === 'WON') {
+      playSound('win');
+      showOverlay('ESCAPED THE DARK!', `Both Kings escaped the Labyrinth in ${sharedInventory.turns} turns!`, 'PLAY AGAIN');
+    }
+
+    if (data.logMsg) setLog(data.logMsg);
+    updateHUD();
+  }
+
+  function broadcastGameState(logMsg = null) {
+    if (!p2pState.active || !p2pState.conn || !p2pState.conn.open) return;
+    try {
+      p2pState.conn.send(serializeFullState(logMsg));
+    } catch (e) {}
+  }
+
+  function sendGuestAction(actionPayload) {
+    if (!p2pState.active || !p2pState.conn || !p2pState.conn.open) return;
+    try {
+      p2pState.conn.send({
+        type: 'GUEST_ACTION',
+        ...actionPayload
+      });
+    } catch (e) {}
+  }
+
   function stepTurn(nx, ny, customLogMsg = null) {
     if (gameState !== 'PLAYING') return;
+
+    // If Guest in P2P, send move intent to Host so Host executes authoritatively
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ action: 'MOVE', nx, ny });
+      return;
+    }
+
     const king = getActiveKing();
 
+    // Update crumbling tiles
     for (const [keyStr, tileState] of crumblingTiles.entries()) {
       if (tileState.state === 'CRACKED') {
         tileState.state = 'COLLAPSED';
         const [cx, cy] = keyStr.split(',').map(Number);
-        playSound('step');
-        spawnBurst(cx, cy, '#ff4500', 22);
+        spawnBurst(cx, cy, '#ff4500', 18);
       }
     }
 
@@ -561,50 +638,140 @@
       king.x = nx; king.y = ny;
       sharedInventory.turns++;
       triggerPitFall();
+      broadcastGameState('🌋 A King fell into the lava abyss!');
       return;
     }
 
     king.x = nx;
     king.y = ny;
+    revealAround(king.x, king.y, 6);
     playSound('step');
-    if (customLogMsg) setLog(customLogMsg);
+
+    let latestLog = customLogMsg;
 
     const newDestState = crumblingTiles.get(`${king.x},${king.y}`);
     if (newDestState && newDestState.state === 'INTACT') {
       newDestState.state = 'CRACKED';
-      playSound('step');
       spawnBurst(king.x, king.y, '#f97316', 14);
-      setLog('🌋 LAVA CRACKS! Fissures erupt beneath your feet!');
+      latestLog = '🌋 LAVA CRACKS! Move off this tile before it collapses!';
     }
 
+    // Collect keys
     for (const k of keys) {
       if (!k.collected && k.x === king.x && k.y === king.y) {
         k.collected = true;
         sharedInventory.keys++;
         playSound('key');
         spawnBurst(k.x, k.y, '#fbbf24', 22);
-        if (sharedInventory.keys >= totalKeysNeeded) door.unlocked = true;
+        latestLog = `🔑 Key collected! (${sharedInventory.keys}/${totalKeysNeeded})`;
+        if (sharedInventory.keys >= totalKeysNeeded) {
+          door.unlocked = true;
+          latestLog = '🚪 All keys found! The Exit Door is now UNLOCKED!';
+        }
       }
+    }
+
+    // Collect guns/ammo
+    for (const g of guns) {
+      if (!g.collected && g.x === king.x && g.y === king.y) {
+        g.collected = true;
+        sharedInventory.ammo += 2;
+        playSound('key');
+        spawnBurst(g.x, g.y, '#fde047', 18);
+        latestLog = '🔫 Picked up Royal Revolver (+2 Ammo)! Press G to shoot.';
+      }
+    }
+
+    // Collect bandages
+    for (const b of bandages) {
+      if (!b.collected && b.x === king.x && b.y === king.y) {
+        b.collected = true;
+        sharedInventory.bandages++;
+        playSound('heal');
+        spawnBurst(b.x, b.y, '#34d399', 18);
+        latestLog = '🩹 Picked up Bandage! Press R to heal.';
+      }
+    }
+
+    // Check if stepped onto an enemy directly
+    const hitEnemyIdx = enemies.findIndex(e => e.x === king.x && e.y === king.y);
+    if (hitEnemyIdx !== -1) {
+      const hitEnemy = enemies[hitEnemyIdx];
+      if (!hitEnemy.unstoppable) {
+        enemies.splice(hitEnemyIdx, 1);
+        spawnBurst(king.x, king.y, '#ef4444', 25);
+        playSound('shoot');
+        latestLog = `⚔️ ${king.name} captured ${hitEnemy.name}!`;
+      } else {
+        sharedInventory.lives--;
+        triggerDamageFlash();
+        playSound('shoot');
+        latestLog = `♚ The Black King is unstoppable! Lost 1 life!`;
+        if (sharedInventory.lives <= 0) {
+          gameState = 'OVER';
+          showOverlay('CHECKMATE', 'The Black forces claimed the labyrinth.', 'TRY AGAIN');
+          updateHUD();
+          broadcastGameState(latestLog);
+          return;
+        }
+      }
+    }
+
+    // Check win condition at Exit Door
+    if (door.unlocked && king.x === door.x && king.y === door.y) {
+      gameState = 'WON';
+      playSound('win');
+      latestLog = '🏆 VICTORY! You escaped the Labyrinth!';
+      showOverlay('ESCAPED THE DARK!', `The Kings escaped the Labyrinth in ${sharedInventory.turns} turns!`, 'PLAY AGAIN');
+      updateHUD();
+      broadcastGameState(latestLog);
+      return;
     }
 
     if (activeKingTurn === 'GREEN') {
       activeKingTurn = 'PURPLE';
-      setLog(`🟢 Green King moved. 🟣 Purple King's Turn!`);
+      if (!latestLog) latestLog = `🟢 Green King moved. 🟣 Purple King's Turn!`;
+      setLog(latestLog);
       updateHUD();
-      broadcastGameState();
+      broadcastGameState(latestLog);
       return;
     } else {
       activeKingTurn = 'GREEN';
       sharedInventory.turns++;
     }
 
-    executeEnemyTurn();
+    const enemyLog = executeEnemyTurn();
+    if (enemyLog) latestLog = enemyLog;
+    else if (!latestLog) latestLog = `🟣 Purple King moved. 🟢 Green King's Turn!`;
+
+    setLog(latestLog);
     updateHUD();
-    broadcastGameState();
+    broadcastGameState(latestLog);
+  }
+
+  function passTurn() {
+    if (gameState !== 'PLAYING') return;
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ action: 'PASS' });
+      return;
+    }
+    let msg = '';
+    if (activeKingTurn === 'GREEN') {
+      activeKingTurn = 'PURPLE';
+      msg = '⏳ Green King passed. 🟣 Purple King\'s Turn!';
+    } else {
+      activeKingTurn = 'GREEN';
+      sharedInventory.turns++;
+      const enemyLog = executeEnemyTurn();
+      msg = enemyLog || '⏳ Purple King passed. 🟢 Green King\'s Turn!';
+    }
+    setLog(msg);
+    updateHUD();
+    broadcastGameState(msg);
   }
 
   function executeEnemyTurn() {
-    computePlayerDistanceField();
+    let attackMsg = null;
     for (const enemy of enemies) {
       enemy.turnsLeft--;
       if (enemy.turnsLeft <= 0) {
@@ -614,74 +781,205 @@
           let best = legalMoves[0];
           let minDist = Infinity;
           for (const m of legalMoves) {
-            const d = Math.min(Math.hypot(m.x - greenKing.x, m.y - greenKing.y), Math.hypot(m.x - purpleKing.x, m.y - purpleKing.y));
+            const d = Math.min(
+              Math.hypot(m.x - greenKing.x, m.y - greenKing.y),
+              Math.hypot(m.x - purpleKing.x, m.y - purpleKing.y)
+            );
             if (d < minDist) { minDist = d; best = m; }
           }
-          enemy.x = best.x; enemy.y = best.y;
-          if ((enemy.x === greenKing.x && enemy.y === greenKing.y) || (enemy.x === purpleKing.x && enemy.y === purpleKing.y)) {
+          enemy.x = best.x;
+          enemy.y = best.y;
+
+          const hitGreen = (enemy.x === greenKing.x && enemy.y === greenKing.y);
+          const hitPurple = (enemy.x === purpleKing.x && enemy.y === purpleKing.y);
+
+          if (hitGreen || hitPurple) {
             sharedInventory.lives--;
+            triggerDamageFlash();
             playSound('shoot');
+            spawnBurst(enemy.x, enemy.y, '#dc2626', 28);
+            attackMsg = `🩸 AMBUSHED by ${enemy.name}! (${sharedInventory.lives} lives left)`;
+
+            // Push stalker back slightly or respawn it away if not unstoppable
             if (sharedInventory.lives <= 0) {
               gameState = 'OVER';
-              showOverlay('CHECKMATE', 'The Black forces claimed the labyrinth.', 'TRY AGAIN');
+              showOverlay('CHECKMATE', `Struck down by ${enemy.name} in the dark.`, 'TRY AGAIN');
+              return attackMsg;
             }
           }
         }
       }
     }
+    return attackMsg;
   }
 
+  // Authentic Chess Piece Movement on the Labyrinth Grid
   function getLegalMovesForPiece(piece, sx, sy) {
     const moves = [];
-    const steps = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-    for (const [dx, dy] of steps) {
-      const nx = sx + dx, ny = sy + dy;
-      if (isWalkable(nx, ny)) moves.push({ x: nx, y: ny });
+    const slideDirs = [];
+
+    if (piece.type === 'ROOK') {
+      slideDirs.push([1,0], [-1,0], [0,1], [0,-1]);
+    } else if (piece.type === 'BISHOP') {
+      slideDirs.push([1,1], [1,-1], [-1,1], [-1,-1]);
+    } else if (piece.type === 'QUEEN') {
+      slideDirs.push([1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]);
+    } else if (piece.type === 'KNIGHT') {
+      const jumps = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+      for (const [dx, dy] of jumps) {
+        const nx = sx + dx, ny = sy + dy;
+        if (isWalkable(nx, ny)) moves.push({ x: nx, y: ny });
+      }
+      return moves;
+    } else {
+      // PAWN or BLACK_KING: 1-tile step in any 8 directions
+      const steps = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+      for (const [dx, dy] of steps) {
+        const nx = sx + dx, ny = sy + dy;
+        if (isWalkable(nx, ny)) moves.push({ x: nx, y: ny });
+      }
+      return moves;
+    }
+
+    const maxSlide = piece.maxSlide || 5;
+    for (const [dx, dy] of slideDirs) {
+      for (let step = 1; step <= maxSlide; step++) {
+        const nx = sx + dx * step;
+        const ny = sy + dy * step;
+        if (!isWalkable(nx, ny)) break;
+        moves.push({ x: nx, y: ny });
+        if ((nx === greenKing.x && ny === greenKing.y) || (nx === purpleKing.x && ny === purpleKing.y)) {
+          break;
+        }
+      }
     }
     return moves;
   }
 
   function triggerPitFall() {
     playSound('shoot');
+    triggerDamageFlash();
     sharedInventory.lives--;
     if (sharedInventory.lives <= 0) {
       gameState = 'OVER';
       showOverlay('CHECKMATE', 'Fell into the lava abyss!', 'TRY AGAIN');
     } else {
-      greenKing.x = rooms[0]?.cx || 45; greenKing.y = rooms[0]?.cy || 45;
-      purpleKing.x = greenKing.x + 1; purpleKing.y = greenKing.y;
+      const spawnX = rooms[0]?.cx || 32;
+      const spawnY = rooms[0]?.cy || 32;
+      greenKing.x = spawnX - 1; greenKing.y = spawnY;
+      purpleKing.x = spawnX + 1; purpleKing.y = spawnY;
     }
+    updateHUD();
   }
 
   function shootClosestEnemy() {
-    if (sharedInventory.ammo <= 0) return;
-    sharedInventory.ammo--;
-    playSound('shoot');
-    if (enemies.length > 0) {
-      enemies.shift();
-      setLog('💥 BANG! Stalker destroyed!');
+    if (gameState !== 'PLAYING') return;
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ action: 'SHOOT' });
+      return;
     }
+    if (sharedInventory.ammo <= 0) {
+      setLog('🔫 Out of ammo! Find revolvers in the labyrinth.');
+      return;
+    }
+    const king = getActiveKing();
+    let bestIdx = -1;
+    let bestDist = Infinity;
+    for (let i = 0; i < enemies.length; i++) {
+      if (enemies[i].unstoppable) continue;
+      const d = Math.hypot(enemies[i].x - king.x, enemies[i].y - king.y);
+      if (d <= 8 && d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    if (bestIdx === -1) {
+      setLog('🔫 No targetable Stalker within range (8 tiles)!');
+      return;
+    }
+    sharedInventory.ammo--;
+    const target = enemies[bestIdx];
+    enemies.splice(bestIdx, 1);
+    playSound('shoot');
+    triggerShootFlash();
+    spawnBurst(target.x, target.y, '#fbbf24', 30);
+    const msg = `💥 BANG! ${king.name} eliminated ${target.name}!`;
+    setLog(msg);
     updateHUD();
-    broadcastGameState();
+    broadcastGameState(msg);
   }
 
   function useBandage() {
-    if (sharedInventory.bandages <= 0 || sharedInventory.lives >= sharedInventory.maxLives) return;
+    if (gameState !== 'PLAYING') return;
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ action: 'HEAL' });
+      return;
+    }
+    if (sharedInventory.bandages <= 0) {
+      setLog('🩹 No bandages left!');
+      return;
+    }
+    if (sharedInventory.lives >= sharedInventory.maxLives) {
+      setLog('🩹 Already at full health!');
+      return;
+    }
     sharedInventory.bandages--;
     sharedInventory.lives++;
     playSound('heal');
-    setLog('🩹 Bandage applied (+1 Life).');
+    const king = getActiveKing();
+    spawnBurst(king.x, king.y, '#34d399', 24);
+    const msg = '🩹 Bandage applied (+1 Shared Life).';
+    setLog(msg);
     updateHUD();
-    broadcastGameState();
+    broadcastGameState(msg);
+  }
+
+  function triggerCompassPulse() {
+    if (gameState !== 'PLAYING') return;
+    const king = getMyKing();
+    pulseWaves.push({ x: (king.x + 0.5) * TILE, y: (king.y + 0.5) * TILE, r: 10, maxR: 320, alpha: 1 });
+    playSound('key');
+    const uncollected = keys.filter(k => !k.collected);
+    if (uncollected.length === 0) {
+      const dx = door.x - king.x, dy = door.y - king.y;
+      const dir = getCompassDir(dx, dy);
+      setLog(`🧭 Compass Pulse: Exit Door is to the ${dir} (${Math.round(Math.hypot(dx, dy))} tiles).`);
+    } else {
+      let nearest = uncollected[0];
+      let minDist = Infinity;
+      for (const k of uncollected) {
+        const d = Math.hypot(k.x - king.x, k.y - king.y);
+        if (d < minDist) { minDist = d; nearest = k; }
+      }
+      const dir = getCompassDir(nearest.x - king.x, nearest.y - king.y);
+      setLog(`🧭 Key Pulse: Nearest Key is ${dir} (~${Math.round(minDist)} tiles away).`);
+    }
+  }
+
+  function getCompassDir(dx, dy) {
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (angle >= -22.5 && angle < 22.5) return 'EAST →';
+    if (angle >= 22.5 && angle < 67.5) return 'SOUTH-EAST ↘';
+    if (angle >= 67.5 && angle < 112.5) return 'SOUTH ↓';
+    if (angle >= 112.5 && angle < 157.5) return 'SOUTH-WEST ↙';
+    if (angle >= -67.5 && angle < -22.5) return 'NORTH-EAST ↗';
+    if (angle >= -112.5 && angle < -67.5) return 'NORTH ↑';
+    if (angle >= -157.5 && angle < -112.5) return 'NORTH-WEST ↖';
+    return 'WEST ←';
   }
 
   function toggleLever(lv) {
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ action: 'LEVER' });
+      return;
+    }
     const g = gateDoors.find(gd => gd.id === lv.doorId);
     if (g) g.isOpen = !g.isOpen;
     playSound('key');
-    setLog('🕹️ Lever pulled!');
+    const msg = '🕹️ Wood Gate Lever pulled!';
+    setLog(msg);
     updateHUD();
-    broadcastGameState();
+    broadcastGameState(msg);
   }
 
   function getAdjacentLever(px, py) {
@@ -689,10 +987,20 @@
   }
 
   function updateHUD() {
-    document.getElementById('ui-lives').textContent = '♥'.repeat(Math.max(0, sharedInventory.lives));
+    document.getElementById('ui-lives').textContent = '♥'.repeat(Math.max(0, sharedInventory.lives)) + '♡'.repeat(Math.max(0, sharedInventory.maxLives - sharedInventory.lives));
     document.getElementById('ui-keys').textContent = `${sharedInventory.keys} / ${totalKeysNeeded} 🔑`;
     document.getElementById('ui-ammo').textContent = `${sharedInventory.ammo} 🔫`;
     document.getElementById('ui-bandages').textContent = `${sharedInventory.bandages} 🩹`;
+
+    const doorEl = document.getElementById('ui-door');
+    if (door.unlocked) {
+      doorEl.textContent = 'UNLOCKED 🚪';
+      doorEl.className = 'text-xs font-extrabold text-emerald-400 animate-pulse';
+    } else {
+      doorEl.textContent = 'LOCKED 🔒';
+      doorEl.className = 'text-xs font-bold text-red-400';
+    }
+
     const turnEl = document.getElementById('ui-turn-status');
     if (activeKingTurn === 'GREEN') {
       turnEl.textContent = '🟢 GREEN KING';
@@ -700,6 +1008,57 @@
     } else {
       turnEl.textContent = '🟣 PURPLE KING';
       turnEl.className = 'text-xs font-extrabold text-fuchsia-400';
+    }
+
+    // P2P Role Badge
+    const p2pBadge = document.getElementById('ui-p2p-badge');
+    const myRoleRow = document.getElementById('ui-my-role-row');
+    const myRoleEl = document.getElementById('ui-my-role');
+    if (p2pState.active) {
+      p2pBadge.textContent = `ONLINE (${p2pState.roomCode})`;
+      p2pBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-sky-900/90 text-sky-200 border border-sky-500/50 font-bold';
+      myRoleRow.classList.remove('hidden');
+      myRoleRow.classList.add('flex');
+      if (p2pState.myRole === 'GREEN') {
+        myRoleEl.textContent = '🟢 GREEN (HOST)';
+        myRoleEl.className = 'text-xs font-extrabold text-emerald-300';
+      } else {
+        myRoleEl.textContent = '🟣 PURPLE (GUEST)';
+        myRoleEl.className = 'text-xs font-extrabold text-fuchsia-300';
+      }
+    } else {
+      p2pBadge.textContent = 'HOTSEAT';
+      p2pBadge.className = 'text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-bold';
+      myRoleRow.classList.add('hidden');
+      myRoleRow.classList.remove('flex');
+    }
+
+    // Render stalker list on right HUD
+    const listEl = document.getElementById('enemy-list');
+    listEl.innerHTML = '';
+    if (enemies.length === 0) {
+      listEl.innerHTML = `<div class="text-zinc-500 italic">No Stalkers remaining</div>`;
+    } else {
+      enemies.slice(0, 8).forEach(en => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between bg-zinc-900/70 px-2.5 py-1 rounded border border-zinc-800';
+        const badgeClass = en.turnsLeft <= 1 ? 'cd-ready' : 'cd-wait';
+        row.innerHTML = `
+          <span class="flex items-center gap-1.5 font-semibold" style="color:${en.color}">
+            <span class="text-base leading-none">${en.symbol}</span> ${en.name}
+          </span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeClass}">
+            ${en.turnsLeft <= 1 ? 'READY' : en.turnsLeft + 'T'}
+          </span>
+        `;
+        listEl.appendChild(row);
+      });
+      if (enemies.length > 8) {
+        const more = document.createElement('div');
+        more.className = 'text-[10px] text-zinc-500 text-center pt-0.5';
+        more.textContent = `+${enemies.length - 8} more in the shadows...`;
+        listEl.appendChild(more);
+      }
     }
   }
 
@@ -714,124 +1073,503 @@
     document.getElementById('overlay').classList.remove('hidden');
   }
 
-  function initP2P() {
-    const statusBox = document.getElementById('p2p-status-box');
-    statusBox.classList.remove('hidden');
-    p2pState.peer = new Peer();
-
-    p2pState.peer.on('open', (id) => {
-      p2pState.roomId = id;
-      statusBox.innerHTML = `Your Room ID: <b class="text-white">${id}</b>. Share this with Player 2!`;
-    });
-
-    p2pState.peer.on('connection', (conn) => {
-      p2pState.conn = conn;
-      p2pState.active = true;
-      p2pState.isHost = true;
-      statusBox.innerHTML = `<span class="text-emerald-400">Player 2 Connected! You are Green King 🟢.</span>`;
-      setupP2PListeners();
-    });
+  // ============================================================================
+  // P2P MULTIPLAYER (PeerJS WebRTC - Works on GitHub Pages Static Hosting)
+  // ============================================================================
+  function generateShortCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 
-  function joinP2P(hostId) {
+  function setP2PStatus(html, isError = false) {
     const statusBox = document.getElementById('p2p-status-box');
     statusBox.classList.remove('hidden');
-    p2pState.peer = new Peer();
+    statusBox.className = `text-xs bg-zinc-950 p-2.5 rounded-lg border ${isError ? 'border-red-500/60 text-red-300' : 'border-sky-500/40 text-sky-200'} leading-relaxed`;
+    statusBox.innerHTML = html;
+  }
 
-    p2pState.peer.on('open', () => {
-      p2pState.conn = p2pState.peer.connect(hostId);
-      p2pState.active = true;
-      p2pState.isHost = false;
-      p2pState.myRole = 'PURPLE';
-      setupP2PListeners();
-      statusBox.innerHTML = `<span class="text-emerald-400">Connected to Host! You are Purple King 🟣.</span>`;
-    });
+  function updateP2PModalUI() {
+    const indicator = document.getElementById('p2p-conn-indicator');
+    const roomPanel = document.getElementById('p2p-room-panel');
+    const codeDisplay = document.getElementById('p2p-room-code-display');
+    const disconnectBtn = document.getElementById('p2p-disconnect-btn');
+    const banner = document.getElementById('ov-p2p-banner');
+    const bannerText = document.getElementById('ov-p2p-banner-text');
+
+    if (p2pState.active) {
+      indicator.textContent = p2pState.isHost ? '🟢 Hosting (Green King)' : '🟣 Connected (Purple King)';
+      indicator.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-bold';
+      disconnectBtn.classList.remove('hidden');
+      roomPanel.classList.remove('hidden');
+      codeDisplay.textContent = p2pState.roomCode || '------';
+      banner.classList.remove('hidden');
+      bannerText.innerHTML = p2pState.isHost
+        ? `🟢 Hosting Room <b>${p2pState.roomCode}</b> — Player 2 Connected!`
+        : `🟣 Connected to Room <b>${p2pState.roomCode}</b> as Purple King!`;
+    } else if (p2pState.peer && p2pState.roomCode) {
+      indicator.textContent = '⏳ Waiting for Player 2...';
+      indicator.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/50 font-bold';
+      disconnectBtn.classList.remove('hidden');
+      roomPanel.classList.remove('hidden');
+      codeDisplay.textContent = p2pState.roomCode;
+      banner.classList.remove('hidden');
+      bannerText.innerHTML = `⏳ Room Code: <b class="text-amber-300">${p2pState.roomCode}</b> (Waiting for friend to join...)`;
+    } else {
+      indicator.textContent = 'Offline (Local Hotseat)';
+      indicator.className = 'text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-semibold';
+      disconnectBtn.classList.add('hidden');
+      roomPanel.classList.add('hidden');
+      banner.classList.add('hidden');
+    }
+    updateHUD();
+  }
+
+  function disconnectP2P() {
+    if (p2pState.heartbeatTimer) clearInterval(p2pState.heartbeatTimer);
+    if (p2pState.conn) {
+      try { p2pState.conn.close(); } catch (e) {}
+    }
+    if (p2pState.peer) {
+      try { p2pState.peer.destroy(); } catch (e) {}
+    }
+    p2pState.active = false;
+    p2pState.isHost = false;
+    p2pState.peer = null;
+    p2pState.conn = null;
+    p2pState.roomCode = '';
+    p2pState.myRole = 'GREEN';
+    setP2PStatus('Disconnected. Returned to Local Hotseat mode.');
+    updateP2PModalUI();
+  }
+
+  function initP2PHost() {
+    disconnectP2P();
+    if (!window.Peer) {
+      setP2PStatus('PeerJS library failed to load. Please check your internet connection.', true);
+      return;
+    }
+    const shortCode = generateShortCode();
+    p2pState.roomCode = shortCode;
+    p2pState.isHost = true;
+    p2pState.myRole = 'GREEN';
+    setP2PStatus('⏳ Creating P2P Room on signaling server...');
+
+    try {
+      const peerId = PEER_PREFIX + shortCode;
+      p2pState.peer = new window.Peer(peerId, {
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      });
+
+      p2pState.peer.on('open', () => {
+        setP2PStatus(`✅ Room created! Share Code <b class="text-white">${shortCode}</b> or copy the Invite Link for Player 2.`);
+        updateP2PModalUI();
+      });
+
+      p2pState.peer.on('error', (err) => {
+        setP2PStatus(`P2P Error: ${err.type || err.message || err}`, true);
+      });
+
+      p2pState.peer.on('connection', (conn) => {
+        p2pState.conn = conn;
+        setupP2PListeners();
+      });
+    } catch (e) {
+      setP2PStatus('Could not initialize PeerJS.', true);
+    }
+  }
+
+  function joinP2PRoom(rawCode) {
+    const cleanCode = (rawCode || '').trim().toUpperCase().replace(/^CITD-P2P-V1-/i, '');
+    if (!cleanCode) {
+      setP2PStatus('Please enter a valid Room Code.', true);
+      return;
+    }
+    disconnectP2P();
+    if (!window.Peer) {
+      setP2PStatus('PeerJS library failed to load. Check internet connection.', true);
+      return;
+    }
+
+    p2pState.roomCode = cleanCode;
+    p2pState.isHost = false;
+    p2pState.myRole = 'PURPLE';
+    setP2PStatus(`⏳ Connecting to Room <b class="text-white">${cleanCode}</b>...`);
+
+    try {
+      p2pState.peer = new window.Peer({
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      });
+
+      p2pState.peer.on('open', () => {
+        const targetPeerId = cleanCode.length <= 8 ? (PEER_PREFIX + cleanCode) : rawCode.trim();
+        const conn = p2pState.peer.connect(targetPeerId, { reliable: true });
+        p2pState.conn = conn;
+        setupP2PListeners();
+      });
+
+      p2pState.peer.on('error', (err) => {
+        setP2PStatus(`Connection Failed (${err.type || 'Room not found'}). Verify the code and try again.`, true);
+        updateP2PModalUI();
+      });
+    } catch (e) {
+      setP2PStatus('Could not join room.', true);
+    }
   }
 
   function setupP2PListeners() {
-    if (!p2pState.conn) return;
-    p2pState.conn.on('data', (data) => {
-      if (data.type === 'SYNC') {
-        greenKing.x = data.greenX; greenKing.y = data.greenY;
-        purpleKing.x = data.purpleX; purpleKing.y = data.purpleY;
-        activeKingTurn = data.turn;
-        Object.assign(sharedInventory, data.inventory);
-        updateHUD();
+    const conn = p2pState.conn;
+    if (!conn) return;
+
+    conn.on('open', () => {
+      p2pState.active = true;
+      updateP2PModalUI();
+
+      if (p2pState.isHost) {
+        setP2PStatus(`🎉 <span class="text-emerald-400 font-bold">Player 2 Connected!</span> You are <b>Green King 🟢</b>. Starting or continuing labyrinth syncs automatically!`);
+        setLog('🌐 Player 2 joined as Purple King 🟣! Game state synchronized.');
+        // If Host hasn't started a game yet, initialize it so both can jump right in, or sync current game
+        if (gameState === 'MENU') {
+          initGame();
+          gameState = 'PLAYING';
+          document.getElementById('overlay').classList.add('hidden');
+        }
+        broadcastGameState('🌐 Co-op P2P Connected! Green King (Host) & Purple King (Guest) ready!');
+      } else {
+        setP2PStatus(`🎉 <span class="text-emerald-400 font-bold">Connected to Host!</span> You are <b>Purple King 🟣</b>.`);
+        setLog('🌐 Connected to Host! Waiting for state sync...');
+        conn.send({ type: 'REQUEST_SYNC' });
       }
     });
-  }
 
-  function broadcastGameState() {
-    if (!p2pState.active || !p2pState.conn) return;
-    p2pState.conn.send({
-      type: 'SYNC',
-      greenX: greenKing.x, greenY: greenKing.y,
-      purpleX: purpleKing.x, purpleKing.y: purpleKing.y,
-      turn: activeKingTurn,
-      inventory: sharedInventory
+    conn.on('data', (data) => {
+      if (!data || typeof data !== 'object') return;
+
+      if (data.type === 'FULL_SYNC') {
+        applyFullState(data);
+      } else if (data.type === 'REQUEST_SYNC' && p2pState.isHost) {
+        broadcastGameState();
+      } else if (data.type === 'AIM_SYNC') {
+        if (data.role === 'GREEN') greenKing.aimAngle = data.angle;
+        else if (data.role === 'PURPLE') purpleKing.aimAngle = data.angle;
+      } else if (data.type === 'GUEST_ACTION' && p2pState.isHost) {
+        // Host validates and executes Guest (Purple King) actions
+        if (data.action === 'MOVE') {
+          if (activeKingTurn === 'PURPLE' && canKingStepTo(purpleKing, data.nx, data.ny)) {
+            stepTurn(data.nx, data.ny);
+          }
+        } else if (data.action === 'PASS') {
+          if (activeKingTurn === 'PURPLE') passTurn();
+        } else if (data.action === 'SHOOT') {
+          shootClosestEnemy();
+        } else if (data.action === 'HEAL') {
+          useBandage();
+        } else if (data.action === 'LEVER') {
+          const lv = getAdjacentLever(purpleKing.x, purpleKing.y);
+          if (lv) toggleLever(lv);
+        }
+      }
+    });
+
+    conn.on('close', () => {
+      p2pState.active = false;
+      setP2PStatus('⚠️ Peer disconnected. Switched to local hotseat control.', true);
+      setLog('⚠️ P2P Partner disconnected. You can continue in local hotseat or reconnect.');
+      updateP2PModalUI();
+    });
+
+    conn.on('error', () => {
+      setP2PStatus('⚠️ Connection error occurred.', true);
     });
   }
 
+  // ============================================================================
+  // PROCEDURAL LABYRINTH & SCENARIO GENERATOR
+  // ============================================================================
   function initGame() {
-    grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(1));
-    explored = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(true));
-    rooms = [{ id: 0, cx: 45, cy: 45, shapeType: 'ARENA', tiles: [] }];
-    keys = []; guns = []; bandages = []; enemies = []; gateDoors = []; levers = []; whiteRooks = [];
+    // Only Host or Offline player generates a new random map
+    if (p2pState.active && !p2pState.isHost) {
+      sendGuestAction({ type: 'REQUEST_SYNC' });
+      return;
+    }
+
+    grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(0));
+    explored = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(false));
+    rooms = [];
+    keys = [];
+    guns = [];
+    bandages = [];
+    enemies = [];
+    gateDoors = [];
+    levers = [];
     crumblingTiles.clear();
 
-    for (let r = 35; r <= 55; r++) {
-      for (let c = 35; c <= 55; c++) {
-        rooms[0].tiles.push({ x: c, y: r });
+    if (currentDifficulty === 'EASY') totalKeysNeeded = 3;
+    else if (currentDifficulty === 'NORMAL') totalKeysNeeded = 5;
+    else totalKeysNeeded = 8;
+
+    const numRooms = currentMode === 'TUTORIAL' ? 4 : 11;
+    const centerRoom = { id: 0, cx: 32, cy: 32, w: 9, h: 9 };
+    rooms.push(centerRoom);
+
+    for (let i = 1; i < numRooms; i++) {
+      let placed = false;
+      for (let attempt = 0; attempt < 50 && !placed; attempt++) {
+        const w = 6 + Math.floor(Math.random() * 5);
+        const h = 6 + Math.floor(Math.random() * 5);
+        const cx = 8 + Math.floor(Math.random() * (MAP_W - 16));
+        const cy = 8 + Math.floor(Math.random() * (MAP_H - 16));
+        const overlaps = rooms.some(r => Math.abs(r.cx - cx) < (r.w + w) / 2 + 3 && Math.abs(r.cy - cy) < (r.h + h) / 2 + 3);
+        if (!overlaps) {
+          rooms.push({ id: i, cx, cy, w, h });
+          placed = true;
+        }
       }
     }
 
-    greenKing.x = 43; greenKing.y = 45;
-    purpleKing.x = 47; purpleKing.y = 45;
+    // Carve rooms
+    for (const r of rooms) {
+      const x0 = Math.floor(r.cx - r.w / 2);
+      const y0 = Math.floor(r.cy - r.h / 2);
+      for (let y = y0; y < y0 + r.h; y++) {
+        for (let x = x0; x < x0 + r.w; x++) {
+          if (y > 1 && y < MAP_H - 2 && x > 1 && x < MAP_W - 2) {
+            grid[y][x] = 1;
+          }
+        }
+      }
+    }
+
+    // Carve 2-tile wide corridors connecting rooms
+    for (let i = 1; i < rooms.length; i++) {
+      const a = rooms[i - 1];
+      const b = rooms[i];
+      let x = a.cx, y = a.cy;
+      while (x !== b.cx) {
+        grid[y][x] = 1;
+        if (y + 1 < MAP_H - 2) grid[y + 1][x] = 1;
+        x += (b.cx > x ? 1 : -1);
+      }
+      while (y !== b.cy) {
+        grid[y][x] = 1;
+        if (x + 1 < MAP_W - 2) grid[y][x + 1] = 1;
+        y += (b.cy > y ? 1 : -1);
+      }
+    }
+
+    // Place Kings in Room 0
+    greenKing.x = rooms[0].cx - 1;
+    greenKing.y = rooms[0].cy;
+    greenKing.drawX = greenKing.x;
+    greenKing.drawY = greenKing.y;
+
+    purpleKing.x = rooms[0].cx + 1;
+    purpleKing.y = rooms[0].cy;
+    purpleKing.drawX = purpleKing.x;
+    purpleKing.drawY = purpleKing.y;
+
     activeKingTurn = 'GREEN';
+    sharedInventory.maxLives = 3;
+    sharedInventory.lives = 3;
+    sharedInventory.keys = 0;
+    sharedInventory.ammo = 2;
+    sharedInventory.bandages = 2;
+    sharedInventory.turns = 0;
 
-    sharedInventory.lives = 3; sharedInventory.keys = 0; sharedInventory.ammo = 3; sharedInventory.bandages = 2;
+    // Place Exit Door in the last room
+    const lastRoom = rooms[rooms.length - 1];
+    door = { x: lastRoom.cx, y: lastRoom.cy, unlocked: false };
 
-    door = { x: 55, y: 45, unlocked: false };
-    keys.push({ x: 52, y: 45, collected: false });
-    guns.push({ x: 45, y: 40, collected: false });
-    bandages.push({ x: 45, y: 50, collected: false });
+    // Collect walkable floor tiles outside spawn area for items & enemies
+    const floorTiles = [];
+    for (let y = 2; y < MAP_H - 2; y++) {
+      for (let x = 2; x < MAP_W - 2; x++) {
+        if (grid[y][x] === 1) {
+          const distFromSpawn = Math.hypot(x - rooms[0].cx, y - rooms[0].cy);
+          if (distFromSpawn > 5 && (x !== door.x || y !== door.y)) {
+            floorTiles.push({ x, y });
+          }
+        }
+      }
+    }
 
-    enemies.push({ ...ENEMY_TYPES.KNIGHT, x: 50, y: 42, turnsLeft: 2 });
-    enemies.push({ ...ENEMY_TYPES.BISHOP, x: 40, y: 48, turnsLeft: 1 });
+    // Shuffle helper
+    floorTiles.sort(() => Math.random() - 0.5);
+
+    // Place Keys
+    for (let i = 0; i < totalKeysNeeded && floorTiles.length > 0; i++) {
+      const pos = floorTiles.pop();
+      keys.push({ x: pos.x, y: pos.y, collected: false });
+    }
+
+    // Place Guns & Bandages
+    for (let i = 0; i < 3 && floorTiles.length > 0; i++) {
+      const pos = floorTiles.pop();
+      guns.push({ x: pos.x, y: pos.y, collected: false });
+    }
+    for (let i = 0; i < 3 && floorTiles.length > 0; i++) {
+      const pos = floorTiles.pop();
+      bandages.push({ x: pos.x, y: pos.y, collected: false });
+    }
+
+    // Lava cracks in SCENARIO_LAVA or some random tiles in normal mode
+    const lavaRatio = currentMode === 'SCENARIO_LAVA' ? 0.22 : 0.04;
+    for (const ft of floorTiles) {
+      if (Math.random() < lavaRatio) {
+        crumblingTiles.set(`${ft.x},${ft.y}`, { state: 'INTACT' });
+      }
+    }
+
+    // Spawn Enemies based on difficulty
+    const enemyPool = [ENEMY_TYPES.PAWN, ENEMY_TYPES.KNIGHT, ENEMY_TYPES.BISHOP, ENEMY_TYPES.ROOK, ENEMY_TYPES.QUEEN];
+    const numEnemies = currentDifficulty === 'EASY' ? 4 : (currentDifficulty === 'NORMAL' ? 7 : 11);
+
+    for (let i = 0; i < numEnemies && floorTiles.length > 0; i++) {
+      const pos = floorTiles.pop();
+      const template = enemyPool[i % enemyPool.length];
+      enemies.push({
+        ...template,
+        x: pos.x,
+        y: pos.y,
+        turnsLeft: template.cooldown
+      });
+    }
+
+    // Add The Black King boss in non-tutorial modes
+    if (currentMode !== 'TUTORIAL' && floorTiles.length > 0) {
+      const bossPos = floorTiles.pop();
+      enemies.push({
+        ...ENEMY_TYPES.BLACK_KING,
+        x: bossPos.x,
+        y: bossPos.y,
+        turnsLeft: 3
+      });
+    }
+
+    revealAround(greenKing.x, greenKing.y, 6);
+    revealAround(purpleKing.x, purpleKing.y, 6);
+
+    camera.x = (greenKing.x + 0.5) * TILE;
+    camera.y = (greenKing.y + 0.5) * TILE;
 
     updateHUD();
-    setLog('🟢 Green King\'s turn. Use WASD or click tiles to move.');
+    const startMsg = p2pState.active
+      ? `🌐 Online Co-op Started! 🟢 Green King's Turn.`
+      : `🟢 Green King's turn. Move with WASD / Arrows or click adjacent tiles!`;
+    setLog(startMsg);
+    broadcastGameState(startMsg);
   }
+
+  // ============================================================================
+  // UI EVENT LISTENERS
+  // ============================================================================
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.className = 'mode-btn p-2 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-sky-400';
+      });
+      btn.className = 'mode-btn p-2 rounded-xl border-2 border-sky-400 bg-sky-950/30 text-left transition';
+      currentMode = btn.getAttribute('data-mode');
+    });
+  });
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => {
+        b.className = 'diff-btn p-2.5 rounded-xl border border-zinc-700 bg-zinc-900/80 text-left transition hover:border-amber-400';
+      });
+      btn.className = 'diff-btn p-2.5 rounded-xl border-2 border-amber-400 bg-amber-950/30 text-left transition';
+      currentDifficulty = btn.getAttribute('data-diff');
+    });
+  });
 
   document.getElementById('start-btn').addEventListener('click', () => {
     initAudio();
     document.getElementById('overlay').classList.add('hidden');
-    initGame();
     gameState = 'PLAYING';
+    initGame();
   });
 
-  document.getElementById('p2p-host-btn').addEventListener('click', initP2P);
+  // P2P Modal Controls
+  const settingsModal = document.getElementById('settings-modal');
+  document.getElementById('btn-settings').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+  document.getElementById('ov-settings-btn').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+  document.getElementById('ov-p2p-manage-btn').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+  document.getElementById('settings-close-top').addEventListener('click', () => settingsModal.classList.add('hidden'));
+  document.getElementById('settings-close-btn').addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+  document.getElementById('p2p-host-btn').addEventListener('click', () => {
+    initAudio();
+    initP2PHost();
+  });
+
   document.getElementById('p2p-join-btn').addEventListener('click', () => {
-    const id = prompt('Enter Host Room ID:');
-    if (id) joinP2P(id.trim());
+    initAudio();
+    const code = document.getElementById('p2p-code-input').value;
+    joinP2PRoom(code);
   });
 
+  document.getElementById('p2p-code-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      initAudio();
+      joinP2PRoom(e.target.value);
+    }
+  });
+
+  document.getElementById('p2p-disconnect-btn').addEventListener('click', disconnectP2P);
+
+  document.getElementById('p2p-copy-code-btn').addEventListener('click', () => {
+    if (!p2pState.roomCode) return;
+    navigator.clipboard?.writeText(p2pState.roomCode);
+    setP2PStatus(`📋 Copied Room Code <b>${p2pState.roomCode}</b> to clipboard!`);
+  });
+
+  document.getElementById('p2p-copy-link-btn').addEventListener('click', () => {
+    if (!p2pState.roomCode) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', p2pState.roomCode);
+    navigator.clipboard?.writeText(url.toString());
+    setP2PStatus(`🔗 Copied Invite URL to clipboard! Send it to Player 2 to auto-join.`);
+  });
+
+  // Action Buttons
   document.getElementById('btn-shoot').addEventListener('click', shootClosestEnemy);
   document.getElementById('btn-heal').addEventListener('click', useBandage);
-  document.getElementById('btn-wait').addEventListener('click', () => {
-    activeKingTurn = activeKingTurn === 'GREEN' ? 'PURPLE' : 'GREEN';
-    updateHUD();
+  document.getElementById('btn-wait').addEventListener('click', passTurn);
+  document.getElementById('btn-compass').addEventListener('click', triggerCompassPulse);
+  document.getElementById('btn-new').addEventListener('click', () => {
+    showOverlay('CHECKMATE IN THE DARK', 'Select a scenario and start a new labyrinth run.', 'START NEW LABYRINTH');
   });
-  document.getElementById('btn-new').addEventListener('click', () => location.reload());
 
+  // Keyboard Controls
   window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
     if (gameState !== 'PLAYING') return;
     const key = e.key.toLowerCase();
     const king = getActiveKing();
 
     if (p2pState.active) {
-      if (p2pState.myRole === 'GREEN' && activeKingTurn !== 'GREEN') return;
-      if (p2pState.myRole === 'PURPLE' && activeKingTurn !== 'PURPLE') return;
+      if (p2pState.myRole === 'GREEN' && activeKingTurn !== 'GREEN') {
+        setLog('⏳ Waiting for Purple King (Player 2) to make their move...');
+        return;
+      }
+      if (p2pState.myRole === 'PURPLE' && activeKingTurn !== 'PURPLE') {
+        setLog('⏳ Waiting for Green King (Host) to make their move...');
+        return;
+      }
     }
 
     let dx = 0, dy = 0;
@@ -839,15 +1577,21 @@
     else if (key === 's' || key === 'arrowdown') dy = 1;
     else if (key === 'a' || key === 'arrowleft') dx = -1;
     else if (key === 'd' || key === 'arrowright') dx = 1;
-    else if (key === 'g') { shootClosestEnemy(); return; }
-    else if (key === 'r') { useBandage(); return; }
+    else if (key === 'q') { dx = -1; dy = -1; }
     else if (key === 'e') {
       const lv = getAdjacentLever(king.x, king.y);
-      if (lv) toggleLever(lv);
-      return;
+      if (lv) { toggleLever(lv); return; }
+      dx = 1; dy = -1;
     }
+    else if (key === 'z') { dx = -1; dy = 1; }
+    else if (key === 'c') { dx = 1; dy = 1; }
+    else if (key === ' ') { e.preventDefault(); passTurn(); return; }
+    else if (key === 'g') { shootClosestEnemy(); return; }
+    else if (key === 'r') { useBandage(); return; }
+    else if (key === 'h') { triggerCompassPulse(); return; }
 
     if (dx !== 0 || dy !== 0) {
+      e.preventDefault();
       const nx = king.x + dx;
       const ny = king.y + dy;
       if (canKingStepTo(king, nx, ny)) {
@@ -856,28 +1600,75 @@
     }
   });
 
+  // Mouse Aim & Click-to-Move
+  let lastAimSent = 0;
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    const worldX = e.clientX - canvas.width / 2 + camera.x;
+    const worldY = e.clientY - canvas.height / 2 + camera.y;
+    const myKing = getMyKing();
+    myKing.aimAngle = Math.atan2(worldY - (myKing.y + 0.5) * TILE, worldX - (myKing.x + 0.5) * TILE);
+
+    const now = performance.now();
+    if (p2pState.active && p2pState.conn && p2pState.conn.open && now - lastAimSent > 80) {
+      lastAimSent = now;
+      try {
+        p2pState.conn.send({ type: 'AIM_SYNC', role: p2pState.myRole, angle: myKing.aimAngle });
+      } catch (err) {}
+    }
+  });
+
   canvas.addEventListener('mousedown', (e) => {
     if (gameState !== 'PLAYING') return;
     initAudio();
+    if (p2pState.active) {
+      if (p2pState.myRole === 'GREEN' && activeKingTurn !== 'GREEN') {
+        setLog('⏳ Waiting for Purple King (Player 2) to move!');
+        return;
+      }
+      if (p2pState.myRole === 'PURPLE' && activeKingTurn !== 'PURPLE') {
+        setLog('⏳ Waiting for Green King (Host) to move!');
+        return;
+      }
+    }
+
     const worldX = e.clientX - canvas.width / 2 + camera.x;
     const worldY = e.clientY - canvas.height / 2 + camera.y;
     const gx = Math.floor(worldX / TILE);
     const gy = Math.floor(worldY / TILE);
     const king = getActiveKing();
 
+    if (gx === king.x && gy === king.y) {
+      passTurn();
+      return;
+    }
+
     if (canKingStepTo(king, gx, gy)) {
       stepTurn(gx, gy);
     }
   });
 
+  // ============================================================================
+  // RENDER LOOP (Board, Pieces, Particles, Flashlight Darkness Overlay)
+  // ============================================================================
   function render() {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (gameState === 'MENU') { requestAnimationFrame(render); return; }
 
-    const activeK = getActiveKing();
-    camera.x += ((activeK.x + 0.5) * TILE - camera.x) * 0.18;
-    camera.y += ((activeK.y + 0.5) * TILE - camera.y) * 0.18;
+    if (gameState === 'MENU' && rooms.length === 0) {
+      requestAnimationFrame(render);
+      return;
+    }
+
+    const focusKing = p2pState.active ? getMyKing() : getActiveKing();
+    camera.x += ((focusKing.x + 0.5) * TILE - camera.x) * 0.14;
+    camera.y += ((focusKing.y + 0.5) * TILE - camera.y) * 0.14;
+
+    greenKing.drawX += (greenKing.x - greenKing.drawX) * 0.25;
+    greenKing.drawY += (greenKing.y - greenKing.drawY) * 0.25;
+    purpleKing.drawX += (purpleKing.x - purpleKing.drawX) * 0.25;
+    purpleKing.drawY += (purpleKing.y - purpleKing.drawY) * 0.25;
 
     const offsetX = canvas.width / 2 - camera.x;
     const offsetY = canvas.height / 2 - camera.y;
@@ -885,49 +1676,199 @@
     ctx.save();
     ctx.translate(offsetX, offsetY);
 
+    // Draw Explored Tiles
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
-        if (!explored[r][c]) continue;
+        if (!explored[r]?.[c]) continue;
         const px = c * TILE, py = r * TILE;
-        ctx.fillStyle = (c + r) % 2 === 0 ? '#2e2e42' : '#232334';
-        ctx.fillRect(px, py, TILE, TILE);
+        if (grid[r][c] === 0) {
+          ctx.fillStyle = '#0c0c14';
+          ctx.fillRect(px, py, TILE, TILE);
+          ctx.strokeStyle = '#181826';
+          ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+        } else {
+          const crumble = crumblingTiles.get(`${c},${r}`);
+          if (crumble && crumble.state === 'COLLAPSED') {
+            ctx.fillStyle = '#450a0a';
+            ctx.fillRect(px, py, TILE, TILE);
+            ctx.fillStyle = '#ea580c';
+            ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
+          } else {
+            ctx.fillStyle = (c + r) % 2 === 0 ? '#28283c' : '#1e1e2e';
+            ctx.fillRect(px, py, TILE, TILE);
+            if (crumble && crumble.state === 'CRACKED') {
+              ctx.strokeStyle = '#f97316';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(px + 6, py + 6);
+              ctx.lineTo(px + TILE - 6, py + TILE - 6);
+              ctx.moveTo(px + TILE - 8, py + 8);
+              ctx.lineTo(px + 8, py + TILE - 8);
+              ctx.stroke();
+            }
+          }
+        }
       }
     }
 
+    // Highlight legal step tiles around Active King
+    const activeK = getActiveKing();
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const tx = activeK.x + dx, ty = activeK.y + dy;
+        if (canKingStepTo(activeK, tx, ty)) {
+          ctx.strokeStyle = activeKingTurn === 'GREEN' ? 'rgba(52, 211, 153, 0.28)' : 'rgba(232, 121, 249, 0.28)';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(tx * TILE + 3, ty * TILE + 3, TILE - 6, TILE - 6);
+        }
+      }
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '24px sans-serif';
+
     for (const k of keys) {
-      if (!k.collected) ctx.fillText('🔑', (k.x + 0.5) * TILE, (k.y + 0.5) * TILE);
+      if (!k.collected && explored[k.y]?.[k.x]) ctx.fillText('🔑', (k.x + 0.5) * TILE, (k.y + 0.5) * TILE);
     }
     for (const g of guns) {
-      if (!g.collected) ctx.fillText('🔫', (g.x + 0.5) * TILE, (g.y + 0.5) * TILE);
+      if (!g.collected && explored[g.y]?.[g.x]) ctx.fillText('🔫', (g.x + 0.5) * TILE, (g.y + 0.5) * TILE);
     }
     for (const b of bandages) {
-      if (!b.collected) ctx.fillText('🩹', (b.x + 0.5) * TILE, (b.y + 0.5) * TILE);
+      if (!b.collected && explored[b.y]?.[b.x]) ctx.fillText('🩹', (b.x + 0.5) * TILE, (b.y + 0.5) * TILE);
     }
 
-    ctx.font = '26px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('🚪', (door.x + 0.5) * TILE, (door.y + 0.5) * TILE);
+    // Exit Door
+    if (explored[door.y]?.[door.x]) {
+      ctx.font = '28px sans-serif';
+      ctx.fillText(door.unlocked ? '🚪' : '🔒', (door.x + 0.5) * TILE, (door.y + 0.5) * TILE);
+    }
 
+    // Enemies (visible when within 7 tiles of either King)
     for (const en of enemies) {
-      ctx.fillStyle = en.color;
-      ctx.font = 'bold 30px serif';
-      ctx.fillText(en.symbol, (en.x + 0.5) * TILE, (en.y + 0.5) * TILE);
+      const distG = Math.hypot(en.x - greenKing.x, en.y - greenKing.y);
+      const distP = Math.hypot(en.x - purpleKing.x, en.y - purpleKing.y);
+      if (Math.min(distG, distP) <= 7.5) {
+        ctx.save();
+        ctx.fillStyle = en.color;
+        ctx.shadowColor = en.color;
+        ctx.shadowBlur = 12;
+        ctx.font = 'bold 32px serif';
+        ctx.fillText(en.symbol, (en.x + 0.5) * TILE, (en.y + 0.5) * TILE);
+        ctx.restore();
+      }
     }
 
+    // Active Turn Ring
+    ctx.save();
+    ctx.strokeStyle = activeKingTurn === 'GREEN' ? '#34d399' : '#e879f9';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc((activeK.drawX + 0.5) * TILE, (activeK.drawY + 0.5) * TILE, TILE * 0.44, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Draw Kings
+    ctx.save();
     ctx.font = 'bold 34px serif';
-    ctx.shadowColor = greenKing.color; ctx.shadowBlur = 14;
+    ctx.shadowColor = greenKing.color;
+    ctx.shadowBlur = 16;
     ctx.fillStyle = greenKing.color;
-    ctx.fillText(greenKing.symbol, (greenKing.x + 0.5) * TILE, (greenKing.y + 0.5) * TILE);
+    ctx.fillText(greenKing.symbol, (greenKing.drawX + 0.5) * TILE, (greenKing.drawY + 0.5) * TILE);
 
     ctx.shadowColor = purpleKing.color;
     ctx.fillStyle = purpleKing.color;
-    ctx.fillText(purpleKing.symbol, (purpleKing.x + 0.5) * TILE, (purpleKing.y + 0.5) * TILE);
+    ctx.fillText(purpleKing.symbol, (purpleKing.drawX + 0.5) * TILE, (purpleKing.drawY + 0.5) * TILE);
     ctx.restore();
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.025;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Compass Pulse Waves
+    for (let i = pulseWaves.length - 1; i >= 0; i--) {
+      const pw = pulseWaves[i];
+      pw.r += 6;
+      pw.alpha -= 0.02;
+      if (pw.alpha <= 0) {
+        pulseWaves.splice(i, 1);
+        continue;
+      }
+      ctx.strokeStyle = `rgba(251, 191, 36, ${pw.alpha})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(pw.x, pw.y, pw.r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // Horror Darkness & Dual Flashlight Cone Overlay
+    darkCtx.globalCompositeOperation = 'source-over';
+    darkCtx.fillStyle = 'rgba(2, 2, 5, 0.92)';
+    darkCtx.fillRect(0, 0, darkCanvas.width, darkCanvas.height);
+
+    darkCtx.globalCompositeOperation = 'destination-out';
+    for (const k of [greenKing, purpleKing]) {
+      const sx = (k.drawX + 0.5) * TILE + offsetX;
+      const sy = (k.drawY + 0.5) * TILE + offsetY;
+
+      // Ambient personal glow around each King
+      const radGrad = darkCtx.createRadialGradient(sx, sy, TILE * 0.6, sx, sy, TILE * 4.2);
+      radGrad.addColorStop(0, 'rgba(0,0,0,1)');
+      radGrad.addColorStop(0.6, 'rgba(0,0,0,0.65)');
+      radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      darkCtx.fillStyle = radGrad;
+      darkCtx.beginPath();
+      darkCtx.arc(sx, sy, TILE * 4.2, 0, Math.PI * 2);
+      darkCtx.fill();
+
+      // Directional flashlight beam
+      const beamLen = TILE * 7.5;
+      const spread = 0.48;
+      const coneGrad = darkCtx.createRadialGradient(sx, sy, TILE * 0.5, sx, sy, beamLen);
+      coneGrad.addColorStop(0, 'rgba(0,0,0,0.95)');
+      coneGrad.addColorStop(0.7, 'rgba(0,0,0,0.55)');
+      coneGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      darkCtx.fillStyle = coneGrad;
+      darkCtx.beginPath();
+      darkCtx.moveTo(sx, sy);
+      darkCtx.arc(sx, sy, beamLen, k.aimAngle - spread, k.aimAngle + spread);
+      darkCtx.closePath();
+      darkCtx.fill();
+    }
+
+    ctx.drawImage(darkCanvas, 0, 0);
 
     requestAnimationFrame(render);
   }
 
-  window.onload = () => render();
+  // Auto-join if URL has ?room=CODE (ideal for GitHub Pages invite links)
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+      document.getElementById('settings-modal').classList.remove('hidden');
+      document.getElementById('p2p-code-input').value = roomParam.trim().toUpperCase();
+      setTimeout(() => joinP2PRoom(roomParam), 350);
+    }
+    updateHUD();
+    render();
+  });
 })();
 </script>
 </body>
